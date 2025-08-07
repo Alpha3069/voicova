@@ -51,10 +51,27 @@ const Recording = () => {
         
         recognition.onresult = (event: any) => {
           let transcript = '';
+          let interimTranscript = '';
+          
           for (let i = event.resultIndex; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript;
+            const result = event.results[i];
+            if (result.isFinal) {
+              transcript += result[0].transcript;
+            } else {
+              interimTranscript += result[0].transcript;
+            }
           }
-          setLiveTranscript(transcript);
+          
+          // Only show the final transcript, avoid duplicates
+          if (transcript) {
+            setLiveTranscript(prev => prev + transcript);
+          } else {
+            // Show interim results temporarily
+            setLiveTranscript(prev => {
+              const finalPart = prev.replace(/\s*\[interim\].*$/, '');
+              return finalPart + (interimTranscript ? ` [interim] ${interimTranscript}` : '');
+            });
+          }
         };
         
         recognitionRef.current = recognition;
